@@ -1,28 +1,6 @@
 # Sentiment Analysis API - Standalone
 
-API independente de análise de sentimentos usando Machine Learning. Use como microserviço em seu próprio backend.
-
-## 🚀 Instalar e rodar
-
-### Requisitos
-- Python 3.11+
-- pip (gerenciador de pacotes)
-
-### Instalação
-```bash
-# Criar ambiente virtual
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Instalar dependências
-pip install -r requirements.txt
-```
-
-### Rodar a API
-```bash
-python enhanced_sentiment_api.py 8000
-```
-API disponível em: http://localhost:8000
+API independente de análise de sentimentos usando Machine Learning. Utilizável como microserviço em seu próprio backend.
 
 ## 🎯 Sobre este módulo
 
@@ -56,14 +34,6 @@ API disponível em: http://localhost:8000
 | **Uso de memória** | Baixo | Moderado |
 
 **Usar Enhanced quando:** Você tem rating e informação de recomendação disponíveis para decisões mais críticas.
-
-## 🚀 Rodar com Docker (Recomendado)
-
-```bash
-sudo docker-compose up -d
-```
-
-API disponível em: http://localhost:8000 com documentação em /docs
 
 ## 🚀 Setup local para desenvolvimento
 
@@ -102,7 +72,7 @@ Para treinar o modelo enhanced com melhor acurácia:
 
 2. **Executar o notebook**
    ```bash
-   jupyter notebook enhanced_model_training.ipynb
+   jupyter notebook enhanced_sentiment_model.ipynb
    ```
 
 3. **Executar todas as células** para:
@@ -145,6 +115,10 @@ data_science/
 │   ├── tfidf_vectorizer.joblib
 │   ├── logistic_regression_model.joblib
 │   └── enhanced/         # Modelos avançados
+|        ├── random_forest_model.joblib
+|        ├── rating_scaler.joblib
+|        ├── text_length_scaler.joblib
+|        └── tfidf_vectorizer.joblib
 ├── datasets/             # Dados de treinamento
 ├── notebooks/            # Notebooks Jupyter
 ├── enhanced_sentiment_api.py  # API (principal)

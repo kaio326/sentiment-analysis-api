@@ -1,11 +1,11 @@
 {
   "model_type": "Logistic Regression",
   "vectorizer_type": "TF-IDF",
-  "accuracy_test": 0.7822833882535375,
-  "precision_test": 0.9198282741972845,
-  "recall_test": 0.7822833882535375,
-  "f1_test": 0.8407886614041364,
-  "auc_test": 0.9561244969495039,
+  "accuracy_test": 0.7762744717968598,
+  "precision_test": 0.9209343325074707,
+  "recall_test": 0.7762744717968598,
+  "f1_test": 0.8377472670244397,
+  "auc_test": 0.9537923183901333,
   "num_features": 1000,
   "num_classes": 3,
   "sentiment_mapping": {

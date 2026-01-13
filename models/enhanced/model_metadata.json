@@ -6,10 +6,10 @@
     "recommendation": true,
     "text_length": true
   },
-  "accuracy_test": 0.9899592944369063,
-  "precision_test": 0.990361231977669,
-  "recall_test": 0.9899592944369063,
-  "f1_test": 0.9901385480861268,
+  "accuracy_test": 0.9703818569490211,
+  "precision_test": 0.9837457719721977,
+  "recall_test": 0.9703818569490211,
+  "f1_test": 0.9754211273773107,
   "classes": [
     "Negativo",
     "Neutro",

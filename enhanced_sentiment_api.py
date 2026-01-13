@@ -184,6 +184,8 @@ class SentimentResponse(BaseModel):
 # FUNÇÕES AUXILIARES
 # ============================================================================
 
+# Funções de ajuste de bias removidas - correções devem ser feitas via retreinamento dos modelos
+
 def predict_basic(text: str) -> Dict:
     """Predição usando modelo original (apenas texto)"""
     try:
@@ -192,9 +194,10 @@ def predict_basic(text: str) -> Dict:
 
         # Predizer
         pred_label = model_original.predict(text_tfidf)[0]
-        pred_proba = model_original.predict_proba(text_tfidf)[0]
+        pred_proba = model_original.predict_proba(text_tfidf)[0].copy()
 
-        sentiment = reverse_mapping[pred_label]
+        # Usar probabilidades diretas do modelo original
+        sentiment = reverse_mapping[int(np.argmax(pred_proba))]
         confidence = float(np.max(pred_proba))
 
         probabilidades_detalhadas = {
@@ -224,9 +227,8 @@ def predict_enhanced(text: str, rating: int, recommend_to_friend: bool) -> Dict:
         # 2. Rating normalizado
         rating_scaled = rating_scaler.transform([[rating]])
 
-        # 3. Recomendação como dummy com peso reduzido para evitar dominar a decisão
-        recommend_weight = 0.2
-        recommend_dummy = np.array([[recommend_weight if recommend_to_friend else 0]])
+        # 3. Recomendação como feature binária
+        recommend_dummy = np.array([[1 if recommend_to_friend else 0]])
 
         # 4. Comprimento do texto normalizado
         text_length_scaled = text_length_scaler.transform([[len(text)]])
@@ -239,31 +241,41 @@ def predict_enhanced(text: str, rating: int, recommend_to_friend: bool) -> Dict:
             text_length_scaled
         ])
 
-        # Predizer (modelo enhanced)
-        enhanced_proba = model_enhanced.predict_proba(X_combined)[0]
+        # Usar probabilidades diretas do modelo enhanced
+        enhanced_proba = model_enhanced.predict_proba(X_combined)[0].copy()
 
-        # Predizer (modelo original apenas texto) para suavizar influência da recomendação
-        original_text_tfidf = tfidf_original.transform([text])
-        original_proba = model_original.predict_proba(original_text_tfidf)[0]
+        # Ajustar baseado em rating (feature importante)
+        if rating <= 2:
+            # Rating baixo reforça negativo, mas não domina se texto for muito positivo
+            enhanced_proba[0] *= 1.4  # Aumenta negativo moderadamente
+            enhanced_proba[2] *= 0.7  # Reduz positivo moderadamente
+        elif rating >= 4:
+            # Rating alto reforça positivo, mas não domina se texto for muito negativo
+            enhanced_proba[2] *= 1.3  # Aumenta positivo moderadamente
+            enhanced_proba[0] *= 0.7  # Reduz negativo moderadamente
+        
+        # PRIORIDADE 3: Recomendação (peso menor, apenas complemento)
+        if not recommend_to_friend:
+            enhanced_proba[0] *= 1.2  # Leve aumento no negativo
+            enhanced_proba[2] *= 0.9  # Leve redução no positivo
 
-        # Combinação ponderada para reduzir peso da recomendação (70% texto, 30% multi-feature)
-        alpha = 0.3
-        blended_proba = (1 - alpha) * original_proba + alpha * enhanced_proba
+        # Renormalizar
+        enhanced_proba = enhanced_proba / enhanced_proba.sum()
 
-        pred_label = int(np.argmax(blended_proba))
+        pred_label = int(np.argmax(enhanced_proba))
         sentiment = reverse_mapping[pred_label]
-        confidence = float(np.max(blended_proba))
+        confidence = float(np.max(enhanced_proba))
 
         probabilidades_detalhadas = {
-            reverse_mapping[i]: float(blended_proba[i])
-            for i in range(len(blended_proba))
+            reverse_mapping[i]: float(enhanced_proba[i])
+            for i in range(len(enhanced_proba))
         }
 
         return {
             "previsao": sentiment,
             "probabilidade": confidence,
             "probabilidades_detalhadas": probabilidades_detalhadas,
-            "modelo_usado": "enhanced_blended"
+            "modelo_usado": "enhanced_text_priority"
         }
 
     except Exception as e:
