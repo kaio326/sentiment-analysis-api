@@ -5,6 +5,7 @@ Suporta tanto modelo original (texto apenas) quanto enhanced (texto + rating + r
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
+from contextlib import asynccontextmanager
 import joblib
 import json
 import numpy as np
@@ -23,49 +24,45 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(BASE_DIR, 'models')
 MODELS_ENHANCED_DIR = os.path.join(MODELS_DIR, 'enhanced')
 
-app = FastAPI(
-    title="Enhanced Sentiment Analysis API",
-    description="API para análise de sentimentos com suporte a múltiplas features",
-    version="2.0.0"
-)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifecycle event handler para carregar modelos e mostrar endpoints"""
+    # Startup
+    global tfidf_original, model_original, sentiment_mapping, reverse_mapping
+    global tfidf_enhanced, rating_scaler, text_length_scaler, model_enhanced
+    global enhanced_metadata, ENHANCED_AVAILABLE
+    
+    # Carregar modelo original
+    print("📁 Carregando modelo original...")
+    tfidf_original = joblib.load(os.path.join(MODELS_DIR, 'tfidf_vectorizer.joblib'))
+    model_original = joblib.load(os.path.join(MODELS_DIR, 'logistic_regression_model.joblib'))
 
-# Carregar modelo original
-print("📁 Carregando modelo original...")
-tfidf_original = joblib.load(os.path.join(MODELS_DIR, 'tfidf_vectorizer.joblib'))
-model_original = joblib.load(os.path.join(MODELS_DIR, 'logistic_regression_model.joblib'))
+    with open(os.path.join(MODELS_DIR, 'sentiment_mapping.json'), 'r') as f:
+        sentiment_mapping = json.load(f)
 
-with open(os.path.join(MODELS_DIR, 'sentiment_mapping.json'), 'r') as f:
-    sentiment_mapping = json.load(f)
+    # Tentar carregar modelo enhanced (se existir)
+    try:
+        print("📁 Carregando modelo enhanced...")
+        tfidf_enhanced = joblib.load(os.path.join(MODELS_ENHANCED_DIR, 'tfidf_vectorizer.joblib'))
+        rating_scaler = joblib.load(os.path.join(MODELS_ENHANCED_DIR, 'rating_scaler.joblib'))
+        text_length_scaler = joblib.load(os.path.join(MODELS_ENHANCED_DIR, 'text_length_scaler.joblib'))
+        model_enhanced = joblib.load(os.path.join(MODELS_ENHANCED_DIR, 'random_forest_model.joblib'))
 
-# Tentar carregar modelo enhanced (se existir)
-try:
-    print("📁 Carregando modelo enhanced...")
-    tfidf_enhanced = joblib.load(os.path.join(MODELS_ENHANCED_DIR, 'tfidf_vectorizer.joblib'))
-    rating_scaler = joblib.load(os.path.join(MODELS_ENHANCED_DIR, 'rating_scaler.joblib'))
-    text_length_scaler = joblib.load(os.path.join(MODELS_ENHANCED_DIR, 'text_length_scaler.joblib'))
-    model_enhanced = joblib.load(os.path.join(MODELS_ENHANCED_DIR, 'random_forest_model.joblib'))
+        with open(os.path.join(MODELS_ENHANCED_DIR, 'model_metadata.json'), 'r') as f:
+            enhanced_metadata = json.load(f)
 
-    with open(os.path.join(MODELS_ENHANCED_DIR, 'model_metadata.json'), 'r') as f:
-        enhanced_metadata = json.load(f)
+        ENHANCED_AVAILABLE = True
+        print("✅ Modelo enhanced carregado!")
+    except FileNotFoundError:
+        ENHANCED_AVAILABLE = False
+        print("⚠️ Modelo enhanced não encontrado. Usando apenas modelo original.")
 
-    ENHANCED_AVAILABLE = True
-    print("✅ Modelo enhanced carregado!")
-except FileNotFoundError:
-    ENHANCED_AVAILABLE = False
-    print("⚠️ Modelo enhanced não encontrado. Usando apenas modelo original.")
+    # Criar mapeamento reverso
+    reverse_mapping = {v: k for k, v in sentiment_mapping.items()}
 
-# Criar mapeamento reverso
-reverse_mapping = {v: k for k, v in sentiment_mapping.items()}
-
-print("✅ Modelos carregados com sucesso!")
-
-# ============================================================================
-# STARTUP EVENT - MOSTRAR ENDPOINTS
-# ============================================================================
-
-@app.on_event("startup")
-async def startup_event():
-    """Mostrar endpoints ativos ao iniciar"""
+    print("✅ Modelos carregados com sucesso!")
+    
+    # Mostrar endpoints ativos
     print("\n" + "="*70)
     print("🚀 SENTIMENT ANALYSIS API - ENDPOINTS ATIVOS")
     print("="*70)
@@ -100,6 +97,18 @@ async def startup_event():
     print("        → Status da API")
     print("\n" + "="*70)
     print("API pronta! 🎯\n")
+    
+    yield
+    
+    # Shutdown (se necessário)
+    print("🛑 Encerrando API...")
+
+app = FastAPI(
+    title="Enhanced Sentiment Analysis API",
+    description="API para análise de sentimentos com suporte a múltiplas features",
+    version="2.0.0",
+    lifespan=lifespan
+)
 
 # ============================================================================
 # MODELOS PYDANTIC

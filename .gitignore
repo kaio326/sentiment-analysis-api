@@ -3,29 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
-env/
-venv/
-ENV/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 
 # Virtual environment
-sentiment-env/
-venv/
+.venv/
 
 # IDE
 .vscode/
@@ -35,27 +15,20 @@ venv/
 *~
 .DS_Store
 
-# Models (grandes demais)
-models/*.joblib
-models/enhanced/*.joblib
+# Models (descomente se os modelos ficarem muito grandes)
+# models/*.joblib
+# models/enhanced/*.joblib
 
 # Datasets (sensíveis)
-datasets/private/
-*.csv
+datasets/*_temp.csv
+datasets/private_*.csv
 
 # Environment
 .env
 .env.local
-.env.*.local
 
 # Jupyter
 .ipynb_checkpoints/
-*.ipynb_checkpoints
 
 # Logs
 *.log
-logs/
-
-# Cache
-*.cache
-.cache/

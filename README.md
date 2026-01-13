@@ -11,8 +11,8 @@ API independente de análise de sentimentos usando Machine Learning. Use como mi
 ### Instalação
 ```bash
 # Criar ambiente virtual
-python3 -m venv sentiment-env
-source sentiment-env/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 
 # Instalar dependências
 pip install -r requirements.txt
@@ -75,8 +75,8 @@ API disponível em: http://localhost:8000 com documentação em /docs
 
 1. **Criar e ativar ambiente virtual**
    ```bash
-   python3 -m venv sentiment-env
-   source sentiment-env/bin/activate
+   python3 -m venv .venv
+   source .venv/bin/activate
    ```
 
 2. **Instalar dependências**
